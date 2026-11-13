@@ -94,3 +94,133 @@
 | 05 | Div-soup, 2 `<main>` | Review slide + Elements | `feat(ex1): add React Router v7 layout with lazy routes and skeleton fallback` |
 
 **Bài học:** AI và code mẫu thường chỉ đúng ở "đường đi chính". Phải tự kiểm tra phiên bản thư viện thực tế được cài, các trường hợp đường dẫn sai, và cấu trúc landmark của cả trang chứ không chỉ từng component.
+
+
+---
+
+# Phần 2 — Exercise 1.3: Context Form Engine
+
+## Failure #06: Validate bằng chuỗi useEffect (waterfall)
+
+- **Task:** T6
+- **Phát hiện:** Review bản nháp (đối chiếu slide "Legacy Validation Anti-Patterns").
+- **AI Code (bản nháp):**
+  ```jsx
+  const [errors, setErrors] = useState({});
+  const [isValid, setIsValid] = useState(false);
+  useEffect(() => { setErrors(validateForm(values)); }, [values]);
+  useEffect(() => { setIsValid(Object.keys(errors).length === 0); }, [errors]);
+  ```
+- **Bug:** Mỗi phím gõ gây 3 lần render (values → errors → isValid); render đầu hiển thị lỗi cũ; nút Gửi đọc `isValid` lỗi thời.
+- **Engineering Fix:** `const allErrors = validateForm(values)` và `isValid` tính trực tiếp trong render.
+  Commit: `feat(ex1.3): add form context and synchronous validation`
+- **Verify sau fix:** React Profiler → gõ 1 ký tự → đúng 1 commit render.
+
+## Failure #07: `role="alert"` trên từng field → screen reader đọc dồn
+
+- **Task:** T7
+- **Phát hiện:** Review code contract InputField trên slide.
+- **AI Code (theo slide):**
+  ```jsx
+  {error && <span id={errorId} role="alert">{error}</span>}
+  ```
+- **Bug:** Bấm Gửi khi form trống → 7 alert xuất hiện cùng lúc, screen reader đọc liên tiếp cả 7 và ngắt nhau; ngoài ra lỗi hiện ngay khi chưa gõ gì.
+- **Engineering Fix:** Lỗi từng field chỉ nối qua `aria-describedby` (được đọc khi focus vào field); 1 vùng `<output role="status">` tóm tắt "Còn N lỗi"; focus chuyển tới field lỗi đầu tiên; lỗi chỉ hiện sau khi blur hoặc bấm Gửi.
+  Commit: `feat(ex1.3): add InputField with useId and aria error binding`
+- **Verify sau fix:** Gửi form trống → `document.querySelectorAll('[role=alert]').length === 0`, focus ở ô "Họ tên".
+
+## Failure #08: Thiếu validate chéo "Nhập lại mật khẩu"
+
+- **Task:** T6
+- **Phát hiện:** Review bản nháp (đối chiếu challenge "Cross-Field Validation" trong Live Defense).
+- **AI Code (bản nháp):**
+  ```js
+  if (!values.confirmPassword) errors.confirmPassword = 'Vui lòng nhập lại mật khẩu.';
+  ```
+- **Bug:** Nhập `abc12345` và `abc12344` → form vẫn hợp lệ.
+- **Engineering Fix:** Thêm `else if (values.confirmPassword !== values.password)` ngay trong `validateForm` — vẫn đồng bộ, không cần effect.
+  Commit: `feat(ex1.3): add form context and synchronous validation`
+- **Verify sau fix:** Nhập 2 mật khẩu khác nhau → lỗi "Mật khẩu nhập lại không khớp."
+
+## Failure #09: ShowData dùng `<div>` trong `<dl>` và lộ mật khẩu
+
+- **Task:** T8
+- **Phát hiện:** Review code contract ShowData trên slide.
+- **AI Code (theo slide):**
+  ```jsx
+  <div key={key} className="data-row"><dt>{key}</dt><dd>{String(val)}</dd></div>
+  ```
+- **Bug:** Vi phạm rule zero div-soup; mật khẩu hiển thị dạng chữ thường trên màn hình; tên field là key kỹ thuật (`confirmPassword`).
+- **Engineering Fix:** `<Fragment key>` bọc cặp `<dt>/<dd>`; nhãn tiếng Việt qua `LABELS`; mật khẩu thay bằng `•`.
+  Commit: `feat(ex1.3): add SimpleForm route with ShowData inspector`
+- **Verify sau fix:** Gửi form đúng → bảng "Dữ liệu đã gửi" hiện `••••••••`, `document.querySelectorAll('#root div').length === 0`.
+
+| # | Lỗi | Phát hiện bằng | Commit fix |
+|---|-----|----------------|------------|
+| 06 | useEffect waterfall | Review + Profiler | `feat(ex1.3): add form context and synchronous validation` |
+| 07 | role="alert" từng field | Review slide + screen reader | `feat(ex1.3): add InputField with useId and aria error binding` |
+| 08 | Thiếu validate chéo | Review + nhập thử | `feat(ex1.3): add form context and synchronous validation` |
+| 09 | div trong dl, lộ mật khẩu | Review slide + Elements | `feat(ex1.3): add SimpleForm route with ShowData inspector` |
+
+---
+
+# Phần 3 — Exercise 1.7.1: Full-Stack Forum
+
+## Failure #10: Fetch không huỷ → race condition khi đổi kênh nhanh
+
+- **Task:** T12
+- **Phát hiện:** Review bản nháp (đối chiếu slide "Leaky didCancel Boolean Flags").
+- **AI Code (bản nháp):**
+  ```js
+  useEffect(() => {
+    fetch(`/api/messages/${forum}`).then((r) => r.json()).then(setData);
+  }, [forum]);
+  ```
+- **Bug:** Bấm #nasa rồi #notNasa liền tay: nếu response #nasa về sau thì danh sách #notNasa bị ghi đè bằng tin #nasa; request cũ vẫn chiếm băng thông.
+- **Engineering Fix:** `AbortController` trong effect, cleanup `controller.abort()`, chỉ `setResult` khi `!signal.aborted`; kết quả lưu kèm `forum` nên không bao giờ hiện tin kênh cũ.
+  Commit: `feat(ex1.7.1): add useForumMessages hook with AbortController`
+- **Verify sau fix:** Đổi kênh nhanh 5 lần → Network hiện 5 request `(canceled)`, chỉ còn tin của kênh cuối.
+
+## Failure #11: Log AbortError ra Console mỗi lần đổi kênh
+
+- **Task:** T12
+- **Phát hiện:** Review code mẫu trên slide.
+- **AI Code (bản nháp):**
+  ```js
+  .catch((err) => console.error(err));
+  ```
+- **Bug:** Mỗi lần đổi kênh Console in `AbortError: signal is aborted without reason` → vi phạm Console sạch, dù đây là hành vi đúng.
+- **Engineering Fix:** Trong `catch`, kiểm tra `controller.signal.aborted` trước — bị huỷ thì bỏ qua hoàn toàn; lỗi thật mới đưa vào state và hiện `role="alert"`.
+- **Verify sau fix:** Đổi kênh liên tục → Console trống.
+
+## Failure #12: Server tin toàn bộ `req.body` (mass assignment)
+
+- **Task:** T11
+- **Phát hiện:** Review code contract `server.js` trên slide.
+- **AI Code (theo slide):**
+  ```js
+  const newMessage = { id: crypto.randomUUID(), ...req.body, timestamp: new Date() };
+  ```
+- **Bug:** Gửi `{"author":"a","text":"b","timestamp":"2000-01-01","forum":"nasa"}` → client ghi đè được `timestamp`/`forum`; chuỗi toàn khoảng trắng vẫn qua được kiểm tra `!req.body.text`; body không giới hạn kích thước.
+- **Engineering Fix:** `validateMessage` trim và chỉ trả về `{ author, text }`; spread `value` TRƯỚC `timestamp`; `express.json({ limit: '10kb' })`; middleware lỗi trả JSON 400/413.
+  Commit: `feat(ex1.7.1): add Express REST API with CORS and payload validation`
+- **Verify sau fix:** `curl -X POST ... -d '{"author":"  ","text":"x","id":"hack"}'` → `400 { "fields": { "author": "Vui lòng nhập tên hiển thị." } }`.
+
+## Failure #13: `cors()` mở cho mọi origin
+
+- **Task:** T11
+- **Phát hiện:** Review bản nháp.
+- **AI Code (bản nháp):**
+  ```js
+  app.use(cors());
+  ```
+- **Bug:** `Access-Control-Allow-Origin: *` → bất kỳ trang web nào cũng gọi được API.
+- **Engineering Fix:** `cors({ origin: CORS_ORIGINS })` với danh sách lấy từ `process.env.CORS_ORIGINS` (mặc định 5173, 4173); ghi vào `.env.example`.
+- **Verify sau fix:** Network → response header `Access-Control-Allow-Origin: http://localhost:5173`.
+
+| # | Lỗi | Phát hiện bằng | Commit fix |
+|---|-----|----------------|------------|
+| 10 | Race khi đổi kênh | Review + Network | `feat(ex1.7.1): add useForumMessages hook with AbortController` |
+| 11 | Log AbortError | Review slide + Console | `feat(ex1.7.1): add useForumMessages hook with AbortController` |
+| 12 | Mass assignment | Review slide + curl | `feat(ex1.7.1): add Express REST API with CORS and payload validation` |
+| 13 | CORS mở toàn bộ | Review + response header | `feat(ex1.7.1): add Express REST API with CORS and payload validation` |

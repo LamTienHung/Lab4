@@ -80,3 +80,77 @@ EX1
 | T3 | `feat(ex1): add detail route handling with 404 guard` |
 | T4 | `style(ex1): add responsive master-detail grid at 375px` |
 | T5 | `docs(ex1): add task decomposition and AI failure audit` |
+
+---
+
+# Phần 2 — Exercise 1.3: Context Form Engine & `<ShowData />` Inspector
+
+## Definition of Done
+
+| # | Tiêu chí | Cách kiểm chứng |
+|---|----------|-----------------|
+| F1 | Lỗi tính đồng bộ trong render, zero `useEffect` trong form | `grep -rn "useEffect" src/form src/pages/SimpleForm.jsx` rỗng |
+| F2 | 1 lần render / 1 phím gõ | React Profiler: gõ 1 ký tự → 1 commit |
+| F3 | Field lấy dữ liệu qua `FormContext` | `InputField` không nhận `value`/`onChange` qua props |
+| F4 | `useId` + `aria-invalid` + `aria-describedby` | Elements: input lỗi có `aria-invalid="true"`, trỏ tới span lỗi |
+| F5 | Validate chéo: "Nhập lại mật khẩu" phải khớp | Nhập khác nhau → lỗi "không khớp" |
+| F6 | Gửi form lỗi → focus vào field lỗi đầu tiên, tóm tắt "Còn N lỗi" | Bấm Gửi khi form trống |
+| F7 | Gửi hợp lệ → `<ShowData />` dạng `<dl>`, mật khẩu bị che | Gửi form đúng |
+| F8 | Zero `<div>`, 375px không cuộn ngang, Console sạch | DevTools |
+
+## Task
+
+| Task | File | Commit |
+|------|------|--------|
+| T6 Form context + validation | `src/form/FormContext.js`, `src/form/validation.js` | `feat(ex1.3): add form context and synchronous validation` |
+| T7 InputField | `src/form/InputField.jsx` | `feat(ex1.3): add InputField with useId and aria error binding` |
+| T8 SimpleForm + ShowData + route | `src/form/ShowData.jsx`, `src/pages/SimpleForm.jsx`, `src/App.jsx`, `src/components/Layout.jsx`, `src/components/Skeleton.jsx` | `feat(ex1.3): add SimpleForm route with ShowData inspector` |
+| T9 Styling | `src/App.module.css`, `src/index.css` | `style(ex1.3): style form fields and error states` |
+| T10 Docs | `project-rules.md`, `TASK_DECOMPOSITION.md`, `AI_FAILURE_AUDIT.md` | `docs(ex1.3): update rules, decomposition and AI failure audit` |
+
+**Contract:**
+```ts
+validateForm(values: FormValues): Partial<Record<keyof FormValues, string>>; // hàm thuần
+FormContext value: { values; errors /* chỉ lỗi đang hiển thị */; setField(name, value); markTouched(name) }
+<InputField name label type? hint? {...inputProps} />   // type: text | email | number | password | select | checkbox
+<ShowData data={Record<string, unknown>} />
+```
+
+
+---
+
+# Phần 3 — Exercise 1.7.1: Full-Stack `useForumMessages` & Express REST API
+
+## Definition of Done
+
+| # | Tiêu chí | Cách kiểm chứng |
+|---|----------|-----------------|
+| R1 | Đổi kênh nhanh → request cũ bị huỷ | Network (Slow 4G): các request cũ hiện `(canceled)` |
+| R2 | Không bao giờ hiện tin của kênh cũ sau khi đổi | Đổi nhanh 5 lần → chỉ thấy tin của kênh cuối |
+| R3 | Console sạch khi huỷ request | Không có `AbortError` / `Uncaught (in promise)` |
+| R4 | Tin nhắn hiển thị bằng `<dl>` + `<Fragment key>` | Elements |
+| R5 | GET `/api/messages/:forum`, POST tạo tin `201`, id bằng `randomUUID()` | Gửi tin → hiện cuối danh sách |
+| R6 | POST sai → `400` kèm `fields`; kênh sai → `404`; JSON hỏng → `400` | curl / Network |
+| R7 | CORS chỉ cho `localhost:5173` và `4173` | Response header `Access-Control-Allow-Origin` |
+| R8 | Server tắt → `role="alert"` + nút Thử lại | Tắt terminal server rồi tải lại |
+| R9 | Client và server dùng chung `shared/validateMessage.js` | Gửi form trống → lỗi hiện trước khi gọi API |
+
+## Task
+
+| Task | File | Commit |
+|------|------|--------|
+| T11 Shared validation + Express API | `shared/validateMessage.js`, `server/package.json`, `server/package-lock.json`, `server/index.js`, `server/store.js`, `.env.example` | `feat(ex1.7.1): add Express REST API with CORS and payload validation` |
+| T12 Custom hook | `src/hooks/useForumMessages.js` | `feat(ex1.7.1): add useForumMessages hook with AbortController` |
+| T13 Forum UI + route | `src/forum/channels.js`, `src/forum/MessageComposer.jsx`, `src/pages/ForumPage.jsx`, `src/App.jsx`, `src/components/Layout.jsx`, `src/components/Skeleton.jsx` | `feat(ex1.7.1): add forum route with live channel switcher` |
+| T14 Styling | `src/App.module.css` | `style(ex1.7.1): style message list and composer` |
+| T15 Docs | `project-rules.md`, `TASK_DECOMPOSITION.md`, `AI_FAILURE_AUDIT.md` | `docs(ex1.7.1): update rules, decomposition and AI failure audit` |
+
+**Contract:**
+```ts
+GET  /api/messages/:forum  → 200 Message[] | 404 { error }
+POST /api/messages/:forum  body { author, text } → 201 Message | 400 { error, fields } | 404 { error }
+interface Message { id: string; forum: string; author: string; text: string; timestamp: string }
+
+useForumMessages(forum: string) → { data: Message[]; loading: boolean; error: string | null;
+                                    refetch(): void; postMessage(payload): Promise<Message> }
+```
