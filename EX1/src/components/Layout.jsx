@@ -25,7 +25,17 @@ export function Layout() {
               </NavLink>
             </li>
             <li>
+              <NavLink to="/form" className={navClass}>
+                Biểu mẫu
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/about" className={navClass}>
+                          <li>
+              <NavLink to="/forum" className={navClass}>
+                Forum
+              </NavLink>
+            </li>
                 Giới thiệu
               </NavLink>
             </li>
@@ -37,4 +47,4 @@ export function Layout() {
       </main>
     </>
   );
-}   
+}

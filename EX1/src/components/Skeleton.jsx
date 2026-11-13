@@ -1,5 +1,7 @@
 import styles from '../App.module.css';
 
+const BOX = { page: styles.pageBox, detail: styles.detailBox, directory: styles.detailBox, form: styles.formBox, forum: styles.forumBox };
+
 function Block({ className }) {
   return <span aria-hidden="true" className={`${styles.shimmer} ${className}`} />;
 }
@@ -14,7 +16,7 @@ export function Skeleton({ variant = 'page' }) {
     >
       <span className={styles.srOnly}>Đang tải nội dung…</span>
       {variant === 'directory' && <Block className={styles.sidebarBox} />}
-      <Block className={variant === 'page' ? styles.pageBox : styles.detailBox} />
+      <Block className={BOX[variant]} />
     </section>
   );
 }
