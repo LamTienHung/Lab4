@@ -33,9 +33,9 @@
 - Mỗi commit một thay đổi logic; không commit `node_modules`, `dist`, `.env`.
 
 ## 8. Checklist trước khi nộp
-- [ ] `npm run lint` không lỗi
-- [ ] Copy URL `?category=food&photoId=7` sang tab mới → mở đúng ảnh
-- [ ] Bấm Back khi đang xem ảnh → đóng ảnh, giữ bộ lọc
-- [ ] Chỉ dùng bàn phím: Tab → Enter mở ảnh → ←/→ → Esc → focus về đúng thumbnail
-- [ ] Lighthouse: Performance / Accessibility / Best Practices / SEO = 100
-- [ ] Kiểm tra bằng axe DevTools: 0 lỗi
+- [x] `npm run lint` không lỗi
+- [x] Copy URL `?category=food&photoId=7` sang tab mới → mở đúng ảnh
+- [x] Bấm Back khi đang xem ảnh → đóng ảnh, giữ bộ lọc
+- [x] Chỉ dùng bàn phím: Tab → Enter mở ảnh → ←/→ → Esc → focus về đúng thumbnail
+- [x] Lighthouse: Performance / Accessibility / Best Practices / SEO = 100
+- [x] Kiểm tra bằng axe DevTools: 0 lỗi
