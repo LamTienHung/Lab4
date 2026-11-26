@@ -1,0 +1,16 @@
+{
+  "name": "hw2-swipe-server",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch --env-file=../.env server.js",
+    "start": "node --env-file=../.env server.js",
+    "seed": "node --env-file=../.env seed.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.9.0"
+  }
+}
